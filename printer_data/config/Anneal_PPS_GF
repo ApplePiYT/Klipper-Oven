@@ -1,0 +1,43 @@
+    [gcode_macro ANNEAL_PPS_GF_SALT]
+    description: "Anneal PPS-GF based on salt thermistor"
+    gcode:
+    {% set target_temp = 150 %}
+    {% set hold_minutes = 240 %}
+    {% set ramp_rate = 2 %}
+    {% set sensor = printer["temperature_sensor salt"] %}
+    {% set heater = "heater_generic chamber" %}
+
+    M117 Starting PPS-GF anneal (sensor: salt)
+
+    # Disable idle timeout
+    M84 S0
+
+    # Ramp up using salt thermistor as feedback
+    {% for t in range(50, target_temp + 1, ramp_rate) %}
+        M117 Ramping to {{ t }}°C
+        SET_HEATER_TEMPERATURE HEATER={heater} TARGET={{ t + 5 }} ; overshoot to accelerate
+        {% set timeout = 600 %}  ; 10 minutes max per step
+        {% set start = printer.clock.realtime %}
+        {% while sensor.temperature < t and (printer.clock.realtime - start) < timeout %}
+            G4 S5  ; wait 5s
+        {% endwhile %}
+    {% endfor %}
+
+    # Hold temp
+    M117 Holding {{ target_temp }}°C for {{ hold_minutes }} minutes
+    SET_HEATER_TEMPERATURE HEATER={heater} TARGET={{ target_temp }}
+    G4 S{{ hold_minutes * 60 }}
+
+    # Controlled cooldown
+    {% for t in range(target_temp, 40, -ramp_rate) %}
+        M117 Cooling to {{ t }}°C
+        SET_HEATER_TEMPERATURE HEATER={heater} TARGET={{ t - 5 }}
+        {% set timeout = 600 %}
+        {% set start = printer.clock.realtime %}
+        {% while sensor.temperature > t and (printer.clock.realtime - start) < timeout %}
+            G4 S5
+        {% endwhile %}
+    {% endfor %}
+
+    SET_HEATER_TEMPERATURE HEATER={heater} TARGET=0
+    M117 Annealing complete (salt sensor)
