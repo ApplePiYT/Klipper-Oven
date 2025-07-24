@@ -49,7 +49,7 @@ if valid_params:
     while elapsed_time < time_limit:
         sleep(60)  # Wait 1 minute
         elapsed_time += 1
-        box_temp = printer["temperature_sensor Aux"]["temperature"]
+        box_temp = printer["temperature_sensor Salt"]["temperature"]
         if box_temp <= temp + tolerance:
             time_str = format_time(elapsed_time)
             respond_info(f"✅ Reached target temperature in {time_str}. Current temp: {box_temp:.1f}C")
@@ -74,7 +74,7 @@ if valid_params:
             while hold_elapsed < hold_duration:
                 sleep(60)  # Wait 1 minute
                 hold_elapsed += 1
-                box_temp = printer["temperature_sensor Aux"]["temperature"]
+                box_temp = printer["temperature_sensor Salt"]["temperature"]
                 countdown = hold_duration - hold_elapsed
                 countdown_str = format_time(countdown)
                 respond_info(f"⏳ Soaking... {countdown_str} remaining | Temp: {box_temp:.1f}C")
